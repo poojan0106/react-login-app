@@ -1,21 +1,38 @@
 import { useState } from 'react';
 import './LoginPage.css';
 
-function LoginPage() {
+function LoginPage({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login process
-    setTimeout(() => {
-      console.log('Login attempt:', { username, password });
+    try {
+      const response = await fetch('http://localhost:3001/api/salesforce/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Call parent login handler
+        onLogin();
+      } else {
+        alert('Login failed: ' + (data.message || 'Invalid credentials'));
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Network error: Unable to connect to server. Please ensure the backend server is running.');
+    } finally {
       setIsLoading(false);
-      // Add your login logic here
-    }, 1500);
+    }
   };
 
   return (
