@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './loginPage';
-import SalesforceDashboard from './SalesforceDashboard';
+import Dashboard from './SalesforceDashboard';
 import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('sfAuthenticated') === 'true';
+    return localStorage.getItem('authenticated') === 'true';
   });
 
   const handleLogin = () => {
-    localStorage.setItem('sfAuthenticated', 'true');
+    localStorage.setItem('authenticated', 'true');
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('sfAuthenticated');
+    localStorage.removeItem('authenticated');
     setIsAuthenticated(false);
   };
 
@@ -27,12 +27,10 @@ function App() {
       />
       <Route
         path="/dashboard"
-        element={isAuthenticated ? <SalesforceDashboard onLogout={handleLogout} /> : <Navigate to="/" replace />}
+        element={isAuthenticated ? <Dashboard onLogout={handleLogout} /> : <Navigate to="/" replace />}
       />
     </Routes>
   );
 }
 
 export default App;
-
-

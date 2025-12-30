@@ -1,186 +1,173 @@
 import express from 'express';
 import cors from 'cors';
-import jsforce from 'jsforce';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
 dotenv.config();
 
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3003;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Store connection (in production, use proper session management)
-let sfConnection = null;
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../dist')));
 
-// Salesforce Authentication Endpoint
-app.post('/api/salesforce/auth', async (req, res) => {
+// AWS SES Client configuration
+const sesClient = new SESClient({
+    region: process.env.AWS_REGION || 'us-east-1',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
+});
+
+// Store verification codes temporarily (in production, use Redis or database)
+const verificationCodes = new Map();
+
+// Send verification code via AWS SES
+app.post('/api/send-verification-code', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { email } = req.body;
 
-        // Use credentials from request or environment variables
-        const sfUsername = username || process.env.SF_USERNAME;
-        const sfPassword = password || process.env.SF_PASSWORD;
-        const sfSecurityToken = process.env.SF_SECURITY_TOKEN || '';
-        const loginUrl = process.env.SF_LOGIN_URL || 'https://login.salesforce.com';
-
-        if (!sfUsername || !sfPassword) {
+        if (!email) {
             return res.status(400).json({
-                error: 'Username and password are required'
+                success: false,
+                message: 'Email is required'
             });
         }
 
-        // Create new connection
-        const conn = new jsforce.Connection({
-            loginUrl: loginUrl
+        // Generate 6-digit code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store code with expiration (10 minutes)
+        verificationCodes.set(email, {
+            code: verificationCode,
+            expiresAt: Date.now() + 10 * 60 * 1000
         });
 
-        // Login to Salesforce
-        const userInfo = await conn.login(sfUsername, sfPassword + sfSecurityToken);
+        // Send email via AWS SES
+        const params = {
+            Source: process.env.AWS_SES_FROM_EMAIL,
+            Destination: {
+                ToAddresses: [email]
+            },
+            Message: {
+                Subject: {
+                    Data: 'Your Verification Code',
+                    Charset: 'UTF-8'
+                },
+                Body: {
+                    Html: {
+                        Data: `
+                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                                <h2 style="color: #667eea;">Verification Code</h2>
+                                <p>Your verification code is:</p>
+                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 32px; font-weight: bold; padding: 20px; text-align: center; border-radius: 10px; letter-spacing: 8px;">
+                                    ${verificationCode}
+                                </div>
+                                <p style="color: #666; margin-top: 20px;">This code will expire in 10 minutes.</p>
+                                <p style="color: #999; font-size: 12px;">If you didn't request this code, please ignore this email.</p>
+                            </div>
+                        `,
+                        Charset: 'UTF-8'
+                    },
+                    Text: {
+                        Data: `Your verification code is: ${verificationCode}. This code will expire in 10 minutes.`,
+                        Charset: 'UTF-8'
+                    }
+                }
+            }
+        };
 
-        // Store connection for subsequent requests
-        sfConnection = conn;
+        const command = new SendEmailCommand(params);
+        await sesClient.send(command);
 
         res.json({
             success: true,
-            message: 'Successfully authenticated with Salesforce',
-            userId: userInfo.id,
-            organizationId: userInfo.organizationId
+            message: 'Verification code sent successfully'
         });
 
     } catch (error) {
-        console.error('Salesforce authentication error:', error);
-        res.status(401).json({
-            error: 'Authentication failed',
-            message: error.message
+        console.error('Error sending verification code:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to send verification code',
+            error: error.message
         });
     }
 });
 
-// Get Salesforce Data Endpoint
-app.get('/api/salesforce/data', async (req, res) => {
+// Verify code endpoint
+app.post('/api/verify-code', (req, res) => {
     try {
-        if (!sfConnection) {
-            return res.status(401).json({
-                error: 'Not authenticated. Please login first.'
+        const { email, code } = req.body;
+
+        if (!email || !code) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and code are required'
             });
         }
 
-        const { object = 'Account', limit = 10 } = req.query;
+        const storedData = verificationCodes.get(email);
 
-        // Query Salesforce data
-        const result = await sfConnection.query(
-            `SELECT Id, Name, Type, Industry, Phone, Website, CreatedDate FROM ${object} LIMIT ${limit}`
-        );
-
-        res.json({
-            success: true,
-            totalSize: result.totalSize,
-            records: result.records
-        });
-
-    } catch (error) {
-        console.error('Salesforce data fetch error:', error);
-        res.status(500).json({
-            error: 'Failed to fetch data',
-            message: error.message
-        });
-    }
-});
-
-// Get Salesforce Contacts
-app.get('/api/salesforce/contacts', async (req, res) => {
-    try {
-        if (!sfConnection) {
-            return res.status(401).json({
-                error: 'Not authenticated. Please login first.'
+        if (!storedData) {
+            return res.status(400).json({
+                success: false,
+                message: 'No verification code found for this email'
             });
         }
 
-        const { limit = 10 } = req.query;
-
-        const result = await sfConnection.query(
-            `SELECT Id, FirstName, LastName, Email, Phone, Title, Account.Name FROM Contact LIMIT ${limit}`
-        );
-
-        res.json({
-            success: true,
-            totalSize: result.totalSize,
-            records: result.records
-        });
-
-    } catch (error) {
-        console.error('Salesforce contacts fetch error:', error);
-        res.status(500).json({
-            error: 'Failed to fetch contacts',
-            message: error.message
-        });
-    }
-});
-
-// Get Salesforce Opportunities
-app.get('/api/salesforce/opportunities', async (req, res) => {
-    try {
-        if (!sfConnection) {
-            return res.status(401).json({
-                error: 'Not authenticated. Please login first.'
+        if (Date.now() > storedData.expiresAt) {
+            verificationCodes.delete(email);
+            return res.status(400).json({
+                success: false,
+                message: 'Verification code has expired'
             });
         }
 
-        const { limit = 10 } = req.query;
+        if (storedData.code !== code) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid verification code'
+            });
+        }
 
-        const result = await sfConnection.query(
-            `SELECT Id, Name, StageName, Amount, CloseDate, Account.Name FROM Opportunity LIMIT ${limit}`
-        );
+        // Code is valid, remove it
+        verificationCodes.delete(email);
 
         res.json({
             success: true,
-            totalSize: result.totalSize,
-            records: result.records
+            message: 'Code verified successfully'
         });
 
     } catch (error) {
-        console.error('Salesforce opportunities fetch error:', error);
+        console.error('Error verifying code:', error);
         res.status(500).json({
-            error: 'Failed to fetch opportunities',
-            message: error.message
+            success: false,
+            message: 'Failed to verify code'
         });
     }
 });
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        authenticated: !!sfConnection
-    });
+    res.json({ status: 'ok' });
 });
 
-// Logout endpoint
-app.post('/api/salesforce/logout', async (req, res) => {
-    try {
-        if (sfConnection) {
-            await sfConnection.logout();
-            sfConnection = null;
-        }
-        res.json({ success: true, message: 'Logged out successfully' });
-    } catch (error) {
-        console.error('Logout error:', error);
-        res.status(500).json({ error: 'Logout failed', message: error.message });
-    }
+// Catch-all handler for React Router (must be after API routes)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Salesforce backend server running on http://localhost:${PORT}`);
-    console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

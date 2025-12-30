@@ -2,34 +2,73 @@ import { useState } from 'react';
 import './LoginPage.css';
 
 function LoginPage({ onLogin }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleSendCode = async () => {
+    if (!email) {
+      alert('Please enter your email address first');
+      return;
+    }
 
+    setIsSendingCode(true);
     try {
-      const response = await fetch('http://localhost:3001/api/salesforce/auth', {
+      const response = await fetch('/api/send-verification-code', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Call parent login handler
-        onLogin();
+        setCodeSent(true);
+        alert('Verification code sent to your email!');
       } else {
-        alert('Login failed: ' + (data.message || 'Invalid credentials'));
+        alert('Failed to send code: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Login error:', error);
-      alert('Network error: Unable to connect to server. Please ensure the backend server is running.');
+      console.error('Send code error:', error);
+      alert('Network error: Unable to send verification code.');
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!codeSent) {
+      alert('Please send a verification code first');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/verify-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code: verificationCode }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        onLogin();
+      } else {
+        alert('Verification failed: ' + (data.message || 'Invalid code'));
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      alert('Network error: Unable to verify code.');
     } finally {
       setIsLoading(false);
     }
@@ -52,61 +91,72 @@ function LoginPage({ onLogin }) {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
-            <label htmlFor="username" className="input-label">Username</label>
-            <div className="input-wrapper">
-              <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                className="input-field"
-                required
-              />
+            <label htmlFor="email" className="input-label">Email</label>
+            <div className="input-with-button">
+              <div className="input-wrapper">
+                <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="input-field"
+                  required
+                />
+              </div>
+              <button
+                type="button"
+                className={`send-code-button ${isSendingCode ? 'loading' : ''} ${codeSent ? 'sent' : ''}`}
+                onClick={handleSendCode}
+                disabled={isSendingCode}
+              >
+                {isSendingCode ? (
+                  <span className="spinner-small"></span>
+                ) : codeSent ? (
+                  'Resend'
+                ) : (
+                  'Send Code'
+                )}
+              </button>
             </div>
           </div>
 
-          <div className="input-group">
-            <label htmlFor="password" className="input-label">Password</label>
-            <div className="input-wrapper">
-              <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="input-field"
-                required
-              />
+          {codeSent && (
+            <div className="input-group">
+              <label htmlFor="code" className="input-label">Verification Code</label>
+              <div className="input-wrapper">
+                <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <input
+                  id="code"
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="Enter 6-digit code"
+                  className="input-field"
+                  maxLength={6}
+                  required
+                />
+              </div>
             </div>
-          </div>
-
-          <div className="form-footer">
-            <label className="remember-me">
-              <input type="checkbox" />
-              <span>Remember me</span>
-            </label>
-            <a href="#" className="forgot-password">Forgot password?</a>
-          </div>
+          )}
 
           <button
             type="submit"
             className={`login-button ${isLoading ? 'loading' : ''}`}
-            disabled={isLoading}
+            disabled={isLoading || !codeSent}
           >
             {isLoading ? (
               <>
                 <span className="spinner"></span>
-                Signing in...
+                Verifying...
               </>
             ) : (
-              'Sign In'
+              'Verify & Sign In'
             )}
           </button>
         </form>
