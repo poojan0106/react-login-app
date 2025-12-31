@@ -188,7 +188,7 @@
 /* Stats Container */
 .stats-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 24px;
     margin-bottom: 35px;
 }
@@ -280,6 +280,11 @@
 .stat-icon-eye {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     box-shadow: 0 8px 20px rgba(79, 172, 254, 0.3);
+}
+
+.stat-icon-briefcase {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
 .stat-details {
@@ -497,6 +502,12 @@
 }
 
 /* Responsive */
+@media (max-width: 1400px) {
+    .stats-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 @media (max-width: 1200px) {
     .stats-container {
         grid-template-columns: repeat(2, 1fr);
@@ -596,5 +607,561 @@
     .activity-icon svg {
         width: 18px;
         height: 18px;
+    }
+}
+
+/* ==========================================
+   ADD NEW JOB BUTTON CARD
+   ========================================== */
+
+.add-job-card {
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(112, 173, 71, 0.1) 0%, rgba(112, 173, 71, 0.05) 100%);
+    border: 1px dashed rgba(112, 173, 71, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.add-job-card:hover {
+    border-style: solid;
+    border-color: rgba(112, 173, 71, 0.6);
+    background: linear-gradient(135deg, rgba(112, 173, 71, 0.15) 0%, rgba(112, 173, 71, 0.08) 100%);
+}
+
+.add-job-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 180px;
+}
+
+.add-job-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #70AD47 0%, #5d9239 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(112, 173, 71, 0.3);
+}
+
+.add-job-card:hover .add-job-icon {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 12px 35px rgba(112, 173, 71, 0.4);
+}
+
+.add-job-icon svg {
+    width: 28px;
+    height: 28px;
+    color: #ffffff;
+    stroke-width: 2.5;
+}
+
+.add-job-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+.add-job-subtext {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.add-job-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(112, 173, 71, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.add-job-card:hover .add-job-glow {
+    opacity: 1;
+}
+
+/* ==========================================
+   MODAL STYLES
+   ========================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(5, 15, 26, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+    padding: 20px;
+}
+
+.modal-container {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    animation: modalSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(112, 173, 71, 0.2) 0%, transparent 70%);
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.modal-content {
+    position: relative;
+    background: linear-gradient(180deg, rgba(26, 77, 122, 0.95) 0%, rgba(13, 42, 69, 0.98) 100%);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.5),
+        0 0 100px rgba(112, 173, 71, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 28px 28px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+}
+
+.modal-header-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #70AD47 0%, #5d9239 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(112, 173, 71, 0.3);
+    flex-shrink: 0;
+}
+
+.modal-header-icon svg {
+    width: 26px;
+    height: 26px;
+    color: #ffffff;
+}
+
+.modal-header-text {
+    flex: 1;
+}
+
+.modal-header-text h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+}
+
+.modal-header-text p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+}
+
+.modal-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    padding:0 ;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.modal-close svg {
+    width: 20px;
+    height: 20px;
+    stroke: rgba(255, 255, 255, 0.8);
+    transition: stroke 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(245, 87, 108, 0.2);
+    border-color: rgba(245, 87, 108, 0.3);
+}
+
+.modal-close:hover svg {
+    stroke: #f5576c;
+}
+
+/* Modal Form */
+.modal-form {
+    padding: 24px 28px 28px;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 12px;
+    letter-spacing: 0.3px;
+}
+
+.textarea-wrapper {
+    position: relative;
+}
+
+.textarea-wrapper textarea {
+    width: 100%;
+    min-height: 160px;
+    padding: 18px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    color: #ffffff;
+    font-size: 15px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.textarea-wrapper textarea::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.textarea-wrapper textarea:focus {
+    outline: none;
+    border-color: rgba(112, 173, 71, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 4px rgba(112, 173, 71, 0.1);
+}
+
+.textarea-glow {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    width: 80%;
+    height: 40px;
+    background: radial-gradient(ellipse, rgba(112, 173, 71, 0.15) 0%, transparent 70%);
+    transform: translateX(-50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.textarea-wrapper textarea:focus ~ .textarea-glow {
+    opacity: 1;
+}
+
+.helper-text {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: rgba(112, 173, 71, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(112, 173, 71, 0.15);
+}
+
+.helper-text svg {
+    width: 18px;
+    height: 18px;
+    color: #70AD47;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.helper-text span {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+}
+
+/* Submit Button */
+.submit-btn {
+    position: relative;
+    width: 100%;
+    padding: 18px 28px;
+    background: linear-gradient(135deg, #70AD47 0%, #5d9239 100%);
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(112, 173, 71, 0.3);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(112, 173, 71, 0.4);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.btn-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    z-index: 1;
+}
+
+.btn-content svg {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-glow {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: left 0.5s ease;
+}
+
+.submit-btn:hover .btn-glow {
+    left: 100%;
+}
+
+/* ==========================================
+   REVIEW SECTION STYLES
+   ========================================== */
+
+.review-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.review-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.review-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.review-field label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.review-field label svg {
+    width: 16px;
+    height: 16px;
+    color: #70AD47;
+}
+
+.review-field input,
+.review-field textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.review-field input::placeholder,
+.review-field textarea::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.review-field input:focus,
+.review-field textarea:focus {
+    outline: none;
+    border-color: rgba(112, 173, 71, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 3px rgba(112, 173, 71, 0.1);
+}
+
+.review-field textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.5;
+}
+
+.review-field input::-webkit-outer-spin-button,
+.review-field input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.review-field input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Review Action Buttons */
+.review-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.review-actions .submit-btn {
+    flex: 1;
+}
+
+/* Modal Responsive */
+@media (max-width: 600px) {
+    .modal-container {
+        max-width: 100%;
+    }
+
+    .modal-header {
+        padding: 22px 20px 18px;
+        flex-wrap: wrap;
+    }
+
+    .modal-header-icon {
+        width: 46px;
+        height: 46px;
+    }
+
+    .modal-header-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .modal-header-text h2 {
+        font-size: 19px;
+    }
+
+    .modal-form {
+        padding: 20px;
+    }
+
+    .textarea-wrapper textarea {
+        min-height: 140px;
+        padding: 14px;
+        font-size: 14px;
+    }
+
+    .helper-text {
+        padding: 12px;
+    }
+
+    .helper-text span {
+        font-size: 12px;
+    }
+
+    .submit-btn {
+        padding: 16px 24px;
+    }
+
+    .btn-content {
+        font-size: 15px;
+    }
+
+    .review-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .review-actions {
+        flex-direction: column;
+    }
+
+    .back-btn {
+        order: 2;
+    }
+
+    .review-actions .submit-btn {
+        order: 1;
     }
 }
