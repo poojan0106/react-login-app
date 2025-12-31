@@ -1,0 +1,38 @@
+.app-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 40px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.footer-logo {
+    height: 40px;
+    width: auto;
+    opacity: 0.8;
+    filter: drop-shadow(0 2px 8px rgba(112, 173, 71, 0.2));
+    transition: opacity 0.3s ease;
+}
+
+.footer-logo:hover {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .app-footer {
+        padding: 15px 20px;
+    }
+
+    .footer-logo {
+        height: 30px;
+    }
+}

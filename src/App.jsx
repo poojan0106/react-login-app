@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './loginPage';
 import Dashboard from './SalesforceDashboard';
+import Layout from './components/Layout';
 import './App.css';
 
 function App() {
@@ -27,7 +28,11 @@ function App() {
       />
       <Route
         path="/dashboard"
-        element={isAuthenticated ? <Dashboard onLogout={handleLogout} /> : <Navigate to="/" replace />}
+        element={isAuthenticated ? (
+          <Layout onLogout={handleLogout}>
+            <Dashboard />
+          </Layout>
+        ) : <Navigate to="/" replace />}
       />
     </Routes>
   );
