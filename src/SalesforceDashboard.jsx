@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import './SalesforceDashboard.css';
+import { ToastContainer, useToast } from './components/Toast';
 
 function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [jobPrompt, setJobPrompt] = useState('');
     const [showReview, setShowReview] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [jobData, setJobData] = useState({
         jobTitle: '',
         salary: '',
@@ -12,34 +14,88 @@ function Dashboard() {
         skills: '',
         jobDescription: ''
     });
+    const { toasts, toast, removeToast } = useToast();
 
-    const handleGenerateJob = (e) => {
+    const handleGenerateJob = async (e) => {
         e.preventDefault();
-        // Simulate AI parsing the prompt - in real app, this would call an API
-        setJobData({
-            jobTitle: 'Salesforce Developer',
-            salary: '$120,000',
-            noOfOpenings: '3',
-            skills: 'Apex, Lightning, Salesforce Admin, JavaScript, SQL',
-            jobDescription: jobPrompt || 'We are looking for an experienced Salesforce Developer to join our team...'
-        });
-        setShowReview(true);
+
+        if (!jobPrompt.trim()) {
+            toast.warning('Please enter a job description');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const response = await fetch('/api/parse-job', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: jobPrompt })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                const data = result.data;
+                if (data.salary) {
+                    data.salary = data.salary.replace(/[^0-9]/g, '');
+                }
+                setJobData(data);
+                setShowReview(true);
+                toast.success('Job details generated successfully!');
+            } else {
+                toast.error(result.message || 'Failed to generate job details');
+            }
+        } catch (error) {
+            console.error('Error generating job:', error);
+            toast.error('Network error. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleSubmitJob = (e) => {
+    const handleSubmitJob = async (e) => {
         e.preventDefault();
-        console.log('Job submitted:', jobData);
-        // Handle final job submission here
-        setJobPrompt('');
-        setJobData({
-            jobTitle: '',
-            salary: '',
-            noOfOpenings: '',
-            skills: '',
-            jobDescription: ''
-        });
-        setShowReview(false);
-        setIsModalOpen(false);
+        setIsLoading(true);
+
+        try {
+            const response = await fetch('/api/salesforce/campaign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jobTitle: jobData.jobTitle,
+                    salary: jobData.salary,
+                    noOfOpenings: jobData.noOfOpenings,
+                    skills: jobData.skills,
+                    jobDescription: jobData.jobDescription
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success('Campaign created successfully in Salesforce!');
+                setJobPrompt('');
+                setJobData({
+                    jobTitle: '',
+                    salary: '',
+                    noOfOpenings: '',
+                    skills: '',
+                    jobDescription: ''
+                });
+                setShowReview(false);
+                setIsModalOpen(false);
+            } else {
+                toast.error(result.message || 'Failed to create Campaign');
+            }
+        } catch (error) {
+            console.error('Error creating Campaign:', error);
+            toast.error('Network error. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleBackToPrompt = () => {
@@ -103,6 +159,7 @@ function Dashboard() {
 
     return (
         <div className="dashboard-wrapper">
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
             {/* Animated Background */}
             <div className="dashboard-bg">
                 <div className="bg-gradient"></div>
@@ -262,12 +319,23 @@ function Dashboard() {
                                     </div>
 
                                     {/* Generate Button */}
-                                    <button type="submit" className="submit-btn">
+                                    <button type="submit" className="submit-btn" disabled={isLoading}>
                                         <span className="btn-content">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                            </svg>
-                                            Generate Job Posting
+                                            {isLoading ? (
+                                                <>
+                                                    <svg className="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                        <circle cx="12" cy="12" r="10" strokeWidth="2" strokeDasharray="32" strokeLinecap="round" />
+                                                    </svg>
+                                                    Generating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                    </svg>
+                                                    Generate Job Posting
+                                                </>
+                                            )}
                                         </span>
                                         <div className="btn-glow"></div>
                                     </button>

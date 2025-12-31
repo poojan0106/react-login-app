@@ -4,8 +4,15 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import Anthropic from '@anthropic-ai/sdk';
+import jsforce from 'jsforce';
 
 dotenv.config();
+
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -154,6 +161,198 @@ app.post('/api/verify-code', (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to verify code'
+        });
+    }
+});
+
+// Parse job details using Claude AI
+app.post('/api/parse-job', async (req, res) => {
+    try {
+        const { prompt } = req.body;
+
+        if (!prompt || prompt.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Job description prompt is required'
+            });
+        }
+
+        const systemPrompt = `You are a job posting parser. Extract job details from the user's input and return ONLY a valid JSON object with these exact fields:
+- jobTitle: The job title/position name (string)
+- salary: The salary in dollar format, e.g., "$120,000" or "$80,000 - $100,000" (string)
+- noOfOpenings: Number of positions available (string, e.g., "1", "3", "5")
+- skills: Required skills as a comma-separated string (string)
+- jobDescription: A professional job description based on the input (string)
+
+If any field is not mentioned in the input, make a reasonable inference based on the job title and context.
+Return ONLY the JSON object, no additional text or markdown.`;
+
+        const message = await anthropic.messages.create({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1024,
+            messages: [
+                {
+                    role: 'user',
+                    content: `Parse this job posting request and extract the details:\n\n${prompt}`
+                }
+            ],
+            system: systemPrompt
+        });
+
+        // Extract the text response
+        const responseText = message.content[0].text;
+
+        // Parse the JSON response
+        let jobData;
+        try {
+            jobData = JSON.parse(responseText);
+        } catch (parseError) {
+            // Try to extract JSON from the response if it contains extra text
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                jobData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('Failed to parse AI response as JSON');
+            }
+        }
+
+        // Validate required fields
+        const requiredFields = ['jobTitle', 'salary', 'noOfOpenings', 'skills', 'jobDescription'];
+        for (const field of requiredFields) {
+            if (!jobData[field]) {
+                jobData[field] = '';
+            }
+        }
+
+        res.json({
+            success: true,
+            data: jobData
+        });
+
+    } catch (error) {
+        console.error('Error parsing job with Claude AI:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to parse job details',
+            error: error.message
+        });
+    }
+});
+
+// General Claude AI chat endpoint
+app.post('/api/claude/chat', async (req, res) => {
+    try {
+        const { message, conversationHistory = [] } = req.body;
+
+        if (!message || message.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Message is required'
+            });
+        }
+
+        // Build messages array with conversation history
+        const messages = [
+            ...conversationHistory,
+            { role: 'user', content: message }
+        ];
+
+        const response = await anthropic.messages.create({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 2048,
+            messages: messages
+        });
+
+        const assistantMessage = response.content[0].text;
+
+        res.json({
+            success: true,
+            response: assistantMessage,
+            usage: {
+                inputTokens: response.usage.input_tokens,
+                outputTokens: response.usage.output_tokens
+            }
+        });
+
+    } catch (error) {
+        console.error('Error in Claude chat:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get response from Claude',
+            error: error.message
+        });
+    }
+});
+
+// Salesforce connection instance
+let sfConnection = null;
+
+// Create Campaign record in Salesforce
+app.post('/api/salesforce/campaign', async (req, res) => {
+    try {
+        const { jobTitle, salary, noOfOpenings, skills, jobDescription } = req.body;
+
+        // Validate required fields
+        if (!jobTitle) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job title is required'
+            });
+        }
+
+        // Create Salesforce connection if not exists
+        if (!sfConnection) {
+            sfConnection = new jsforce.Connection({
+                loginUrl: process.env.SF_LOGIN_URL || 'https://login.salesforce.com'
+            });
+
+            await sfConnection.login(
+                process.env.SF_USERNAME,
+                process.env.SF_PASSWORD + (process.env.SF_SECURITY_TOKEN || '')
+            );
+        }
+
+        // Combine description with skills
+        const fullDescription = skills
+            ? `${jobDescription || ''}\n\nRequired Skills: ${skills}`
+            : jobDescription || '';
+
+        // Create Campaign record with field mapping
+        const campaignData = {
+            Name: jobTitle,
+            R_ATS__No_of_openings__c: noOfOpenings ? parseInt(noOfOpenings) : null,
+            R_ATS__Salary__c: salary ? parseFloat(salary) : null,
+            Description: fullDescription
+        };
+
+        const result = await sfConnection.sobject('Campaign').create(campaignData);
+
+        if (result.success) {
+            res.json({
+                success: true,
+                id: result.id,
+                message: 'Campaign created successfully'
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: 'Failed to create Campaign',
+                errors: result.errors
+            });
+        }
+
+    } catch (error) {
+        console.error('Error creating Campaign:', error);
+
+        // Reset connection on auth errors
+        if (error.name === 'INVALID_SESSION_ID' || error.errorCode === 'INVALID_SESSION_ID') {
+            sfConnection = null;
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create Campaign',
+            error: error.message
         });
     }
 });
