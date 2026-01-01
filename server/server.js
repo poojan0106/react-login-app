@@ -342,6 +342,70 @@ app.post('/api/salesforce/campaign', async (req, res) => {
     }
 });
 
+// Get job listings (campaigns) from PostgreSQL
+app.get('/api/salesforce/jobs', async (req, res) => {
+    try {
+        const { search, salaryMin, salaryMax, sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
+
+        let query = `
+            SELECT
+                id,
+                name as job_title,
+                r_ats__no_of_openings__c as no_of_openings,
+                r_ats__salary__c as salary,
+                description,
+                createddate as created_at
+            FROM salesforce.campaign
+            WHERE 1=1
+        `;
+        const values = [];
+        let paramIndex = 1;
+
+        // Search filter (job title or description)
+        if (search) {
+            query += ` AND (LOWER(name) LIKE $${paramIndex} OR LOWER(description) LIKE $${paramIndex})`;
+            values.push(`%${search.toLowerCase()}%`);
+            paramIndex++;
+        }
+
+        // Salary range filters
+        if (salaryMin) {
+            query += ` AND r_ats__salary__c >= $${paramIndex}`;
+            values.push(parseFloat(salaryMin));
+            paramIndex++;
+        }
+
+        if (salaryMax) {
+            query += ` AND r_ats__salary__c <= $${paramIndex}`;
+            values.push(parseFloat(salaryMax));
+            paramIndex++;
+        }
+
+        // Sorting
+        const allowedSortFields = ['created_at', 'name', 'r_ats__salary__c', 'r_ats__no_of_openings__c'];
+        const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'createddate';
+        const order = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+        query += ` ORDER BY ${sortField === 'created_at' ? 'createddate' : sortField} ${order} NULLS LAST`;
+        query += ` LIMIT 50`;
+
+        const result = await pool.query(query, values);
+
+        res.json({
+            success: true,
+            data: result.rows
+        });
+
+    } catch (error) {
+        console.error('Error fetching jobs:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch job listings',
+            error: error.message
+        });
+    }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });

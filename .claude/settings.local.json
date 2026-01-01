@@ -31,7 +31,9 @@
       "Bash(npm run build:*)",
       "Bash(heroku config:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nUse PostgreSQL via Heroku Connect for Campaign creation\n\n- Replace jsforce with pg for database operations\n- Insert Campaign records into PostgreSQL salesforce.campaign table\n- Heroku Connect will sync records to Salesforce automatically\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUse PostgreSQL via Heroku Connect for Campaign creation\n\n- Replace jsforce with pg for database operations\n- Insert Campaign records into PostgreSQL salesforce.campaign table\n- Heroku Connect will sync records to Salesforce automatically\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cmd.exe /c \"taskkill /PID 19232 /F\")",
+      "Bash(/c/Windows/System32/taskkill.exe //F //PID 19232)"
     ]
   }
 }

@@ -1186,3 +1186,365 @@
     opacity: 0.7;
     cursor: not-allowed;
 }
+
+/* ==========================================
+   JOB LISTINGS TABLE STYLES
+   ========================================== */
+
+.jobs-container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    transition: all 0.3s ease;
+}
+
+.jobs-container:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.jobs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.jobs-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+}
+
+.jobs-count {
+    padding: 6px 14px;
+    background: rgba(112, 173, 71, 0.15);
+    border: 1px solid rgba(112, 173, 71, 0.3);
+    border-radius: 20px;
+    color: #70AD47;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Filters */
+.jobs-filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-search {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-search svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+}
+
+.filter-search input {
+    width: 100%;
+    padding: 12px 14px 12px 44px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.filter-search input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.filter-search input:focus {
+    outline: none;
+    border-color: rgba(112, 173, 71, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 3px rgba(112, 173, 71, 0.1);
+}
+
+.filter-salary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-salary input {
+    width: 120px;
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.filter-salary input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.filter-salary input:focus {
+    outline: none;
+    border-color: rgba(112, 173, 71, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 3px rgba(112, 173, 71, 0.1);
+}
+
+.filter-separator {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
+.filter-clear {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 18px;
+    background: rgba(245, 87, 108, 0.15);
+    border: 1px solid rgba(245, 87, 108, 0.3);
+    border-radius: 12px;
+    color: #f5576c;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-clear svg {
+    width: 16px;
+    height: 16px;
+}
+
+.filter-clear:hover {
+    background: rgba(245, 87, 108, 0.25);
+    border-color: rgba(245, 87, 108, 0.5);
+}
+
+/* Jobs Table Wrapper */
+.jobs-table-wrapper {
+    overflow-x: auto;
+    border-radius: 16px;
+}
+
+/* Loading State */
+.jobs-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.jobs-loading .spinner {
+    width: 40px;
+    height: 40px;
+    color: #70AD47;
+}
+
+/* Empty State */
+.jobs-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.jobs-empty svg {
+    width: 56px;
+    height: 56px;
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.jobs-empty span {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.jobs-empty p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0;
+}
+
+/* Jobs Table */
+.jobs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.jobs-table thead tr {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.jobs-table th {
+    padding: 16px 20px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
+}
+
+.jobs-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.jobs-table th.sortable:hover {
+    color: #70AD47;
+}
+
+.jobs-table th .sort-icon {
+    width: 14px;
+    height: 14px;
+    margin-left: 6px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.jobs-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+    animation: fadeInUp 0.4s ease-out forwards;
+    opacity: 0;
+}
+
+.jobs-table tbody tr.clickable-row {
+    cursor: pointer;
+}
+
+.jobs-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.jobs-table tbody tr.clickable-row:hover {
+    background: rgba(112, 173, 71, 0.1);
+    border-color: rgba(112, 173, 71, 0.2);
+}
+
+.jobs-table tbody tr.clickable-row:hover .job-title {
+    color: #70AD47;
+}
+
+.jobs-table td {
+    padding: 18px 20px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    vertical-align: middle;
+}
+
+/* Job Title Cell */
+.job-title-cell {
+    max-width: 350px;
+}
+
+.job-title-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.job-title {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.job-description {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Salary Cell */
+.job-salary {
+    font-weight: 600;
+    color: #70AD47;
+    white-space: nowrap;
+}
+
+/* Openings Badge */
+.openings-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    padding: 4px 12px;
+    background: rgba(102, 126, 234, 0.15);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 20px;
+    color: #667eea;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Date Cell */
+.job-date {
+    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .jobs-filters {
+        flex-direction: column;
+    }
+
+    .filter-search {
+        min-width: 100%;
+    }
+
+    .filter-salary {
+        width: 100%;
+    }
+
+    .filter-salary input {
+        flex: 1;
+    }
+}
+
+@media (max-width: 600px) {
+    .jobs-container {
+        padding: 20px;
+    }
+
+    .jobs-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .jobs-table th,
+    .jobs-table td {
+        padding: 12px 14px;
+    }
+
+    .job-title-cell {
+        max-width: 200px;
+    }
+}

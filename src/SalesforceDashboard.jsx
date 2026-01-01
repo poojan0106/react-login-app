@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './SalesforceDashboard.css';
 import { ToastContainer, useToast } from './components/Toast';
 
 function Dashboard() {
+    const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [jobPrompt, setJobPrompt] = useState('');
     const [showReview, setShowReview] = useState(false);
@@ -15,6 +17,209 @@ function Dashboard() {
         jobDescription: ''
     });
     const { toasts, toast, removeToast } = useToast();
+
+    // Sample data for preview
+    const sampleJobs = [
+        {
+            id: 1,
+            job_title: 'Senior React Developer',
+            salary: 150000,
+            no_of_openings: 3,
+            description: 'We are looking for an experienced React developer to join our team. Must have 5+ years of experience with modern JavaScript frameworks.',
+            created_at: new Date().toISOString()
+        },
+        {
+            id: 2,
+            job_title: 'Salesforce Administrator',
+            salary: 95000,
+            no_of_openings: 2,
+            description: 'Seeking a certified Salesforce Administrator to manage our CRM platform and implement new features.',
+            created_at: new Date(Date.now() - 86400000).toISOString()
+        },
+        {
+            id: 3,
+            job_title: 'Full Stack Engineer',
+            salary: 130000,
+            no_of_openings: 5,
+            description: 'Join our engineering team to build scalable web applications using Node.js, React, and PostgreSQL.',
+            created_at: new Date(Date.now() - 172800000).toISOString()
+        },
+        {
+            id: 4,
+            job_title: 'DevOps Engineer',
+            salary: 140000,
+            no_of_openings: 1,
+            description: 'Looking for a DevOps expert to manage our AWS infrastructure and CI/CD pipelines.',
+            created_at: new Date(Date.now() - 259200000).toISOString()
+        },
+        {
+            id: 5,
+            job_title: 'UI/UX Designer',
+            salary: 110000,
+            no_of_openings: 2,
+            description: 'Creative designer needed to craft beautiful user interfaces and improve user experience across our products.',
+            created_at: new Date(Date.now() - 345600000).toISOString()
+        }
+    ];
+
+    // Job listings state
+    const [jobListings, setJobListings] = useState(sampleJobs);
+    const [isLoadingJobs, setIsLoadingJobs] = useState(false);
+    const [filters, setFilters] = useState({
+        search: '',
+        salaryMin: '',
+        salaryMax: '',
+        sortBy: 'created_at',
+        sortOrder: 'DESC'
+    });
+
+    // Apply filters to sample data locally
+    const filterAndSortJobs = useCallback((jobs) => {
+        let filtered = [...jobs];
+
+        // Search filter
+        if (filters.search) {
+            const searchLower = filters.search.toLowerCase();
+            filtered = filtered.filter(job =>
+                job.job_title.toLowerCase().includes(searchLower) ||
+                (job.description && job.description.toLowerCase().includes(searchLower))
+            );
+        }
+
+        // Salary min filter
+        if (filters.salaryMin) {
+            filtered = filtered.filter(job => job.salary >= parseFloat(filters.salaryMin));
+        }
+
+        // Salary max filter
+        if (filters.salaryMax) {
+            filtered = filtered.filter(job => job.salary <= parseFloat(filters.salaryMax));
+        }
+
+        // Sorting
+        filtered.sort((a, b) => {
+            let aVal, bVal;
+            switch (filters.sortBy) {
+                case 'name':
+                    aVal = a.job_title.toLowerCase();
+                    bVal = b.job_title.toLowerCase();
+                    break;
+                case 'r_ats__salary__c':
+                    aVal = a.salary || 0;
+                    bVal = b.salary || 0;
+                    break;
+                case 'r_ats__no_of_openings__c':
+                    aVal = a.no_of_openings || 0;
+                    bVal = b.no_of_openings || 0;
+                    break;
+                case 'created_at':
+                default:
+                    aVal = new Date(a.created_at).getTime();
+                    bVal = new Date(b.created_at).getTime();
+                    break;
+            }
+
+            if (filters.sortOrder === 'ASC') {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+
+        return filtered;
+    }, [filters]);
+
+    // Fetch job listings
+    const fetchJobListings = useCallback(async () => {
+        setIsLoadingJobs(true);
+        try {
+            const params = new URLSearchParams();
+            if (filters.search) params.append('search', filters.search);
+            if (filters.salaryMin) params.append('salaryMin', filters.salaryMin);
+            if (filters.salaryMax) params.append('salaryMax', filters.salaryMax);
+            params.append('sortBy', filters.sortBy);
+            params.append('sortOrder', filters.sortOrder);
+
+            const response = await fetch(`/api/salesforce/jobs?${params.toString()}`);
+            const result = await response.json();
+
+            if (result.success && result.data.length > 0) {
+                setJobListings(result.data);
+            } else {
+                // Use sample data with local filters if no data from API
+                setJobListings(filterAndSortJobs(sampleJobs));
+            }
+        } catch (error) {
+            console.error('Error fetching jobs:', error);
+            // Use sample data with local filters on error
+            setJobListings(filterAndSortJobs(sampleJobs));
+        } finally {
+            setIsLoadingJobs(false);
+        }
+    }, [filters, filterAndSortJobs]);
+
+    // Fetch jobs on mount and when filters change
+    useEffect(() => {
+        fetchJobListings();
+    }, [fetchJobListings]);
+
+    // Debounced search handler
+    const handleSearchChange = (e) => {
+        setFilters(prev => ({ ...prev, search: e.target.value }));
+    };
+
+    const handleFilterChange = (field, value) => {
+        setFilters(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSort = (field) => {
+        setFilters(prev => ({
+            ...prev,
+            sortBy: field,
+            sortOrder: prev.sortBy === field && prev.sortOrder === 'DESC' ? 'ASC' : 'DESC'
+        }));
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            search: '',
+            salaryMin: '',
+            salaryMax: '',
+            sortBy: 'created_at',
+            sortOrder: 'DESC'
+        });
+    };
+
+    const formatSalary = (salary) => {
+        if (!salary) return '-';
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            maximumFractionDigits: 0
+        }).format(salary);
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
+    const getSortIcon = (field) => {
+        if (filters.sortBy !== field) return null;
+        return filters.sortOrder === 'ASC' ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="sort-icon">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+            </svg>
+        ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="sort-icon">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        );
+    };
 
     const handleGenerateJob = async (e) => {
         e.preventDefault();
@@ -87,6 +292,7 @@ function Dashboard() {
                 });
                 setShowReview(false);
                 setIsModalOpen(false);
+                fetchJobListings(); // Refresh job listings
             } else {
                 toast.error(result.message || 'Failed to create Campaign');
             }
@@ -106,55 +312,6 @@ function Dashboard() {
         setIsModalOpen(false);
         setShowReview(false);
         setJobPrompt('');
-    };
-
-    const recentActivity = [
-        { id: 1, action: 'New user registered', user: 'John Doe', time: '2 mins ago', type: 'user' },
-        { id: 2, action: 'Order completed', user: 'Jane Smith', time: '15 mins ago', type: 'order' },
-        { id: 3, action: 'Payment received', user: 'Bob Wilson', time: '1 hour ago', type: 'payment' },
-        { id: 4, action: 'New subscription', user: 'Alice Brown', time: '2 hours ago', type: 'subscription' },
-        { id: 5, action: 'Support ticket resolved', user: 'Charlie Davis', time: '3 hours ago', type: 'support' },
-    ];
-
-    const renderActivityIcon = (type) => {
-        switch (type) {
-            case 'user':
-                return (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                );
-            case 'order':
-                return (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                );
-            case 'payment':
-                return (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                );
-            case 'subscription':
-                return (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                    </svg>
-                );
-            case 'support':
-                return (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                );
-            default:
-                return (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                );
-        }
     };
 
     return (
@@ -239,34 +396,112 @@ function Dashboard() {
 
                 </div>
 
-                {/* Activity Section */}
-                <div className="activity-container fade-in-up" style={{ animationDelay: '0.4s' }}>
-                    <div className="activity-header">
-                        <h2>Recent Activity</h2>
-                        <button className="view-all-btn">
-                            View All
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                            </svg>
-                        </button>
+                {/* Job Listings Section */}
+                <div className="jobs-container fade-in-up" style={{ animationDelay: '0.4s' }}>
+                    <div className="jobs-header">
+                        <h2>Recent Job Listings</h2>
+                        <span className="jobs-count">{jobListings.length} jobs</span>
                     </div>
-                    <div className="activity-list">
-                        {recentActivity.map((item, index) => (
-                            <div
-                                key={item.id}
-                                className="activity-item"
-                                style={{ animationDelay: `${0.5 + index * 0.1}s` }}
-                            >
-                                <div className={`activity-icon activity-icon-${item.type}`}>
-                                    {renderActivityIcon(item.type)}
-                                </div>
-                                <div className="activity-info">
-                                    <span className="activity-action">{item.action}</span>
-                                    <span className="activity-user">{item.user}</span>
-                                </div>
-                                <span className="activity-time">{item.time}</span>
+
+                    {/* Filters */}
+                    <div className="jobs-filters">
+                        <div className="filter-search">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search jobs..."
+                                value={filters.search}
+                                onChange={handleSearchChange}
+                            />
+                        </div>
+                        <div className="filter-salary">
+                            <input
+                                type="number"
+                                placeholder="Min Salary"
+                                value={filters.salaryMin}
+                                onChange={(e) => handleFilterChange('salaryMin', e.target.value)}
+                            />
+                            <span className="filter-separator">-</span>
+                            <input
+                                type="number"
+                                placeholder="Max Salary"
+                                value={filters.salaryMax}
+                                onChange={(e) => handleFilterChange('salaryMax', e.target.value)}
+                            />
+                        </div>
+                        {(filters.search || filters.salaryMin || filters.salaryMax) && (
+                            <button className="filter-clear" onClick={clearFilters}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Clear
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Jobs Table */}
+                    <div className="jobs-table-wrapper">
+                        {isLoadingJobs ? (
+                            <div className="jobs-loading">
+                                <svg className="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="10" strokeWidth="2" strokeDasharray="32" strokeLinecap="round" />
+                                </svg>
+                                <span>Loading jobs...</span>
                             </div>
-                        ))}
+                        ) : jobListings.length === 0 ? (
+                            <div className="jobs-empty">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <span>No job listings found</span>
+                                <p>Create your first job posting using the "Add New Job" button above</p>
+                            </div>
+                        ) : (
+                            <table className="jobs-table">
+                                <thead>
+                                    <tr>
+                                        <th onClick={() => handleSort('name')} className="sortable">
+                                            Job Title {getSortIcon('name')}
+                                        </th>
+                                        <th onClick={() => handleSort('r_ats__salary__c')} className="sortable">
+                                            Salary {getSortIcon('r_ats__salary__c')}
+                                        </th>
+                                        <th onClick={() => handleSort('r_ats__no_of_openings__c')} className="sortable">
+                                            Openings {getSortIcon('r_ats__no_of_openings__c')}
+                                        </th>
+                                        <th onClick={() => handleSort('created_at')} className="sortable">
+                                            Created {getSortIcon('created_at')}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {jobListings.map((job, index) => (
+                                        <tr
+                                            key={job.id}
+                                            style={{ animationDelay: `${0.05 * index}s` }}
+                                            onClick={() => navigate(`/job/${job.id}`)}
+                                            className="clickable-row"
+                                        >
+                                            <td className="job-title-cell">
+                                                <div className="job-title-wrapper">
+                                                    <span className="job-title">{job.job_title}</span>
+                                                    {job.description && (
+                                                        <span className="job-description">{job.description.substring(0, 80)}...</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="job-salary">{formatSalary(job.salary)}</td>
+                                            <td className="job-openings">
+                                                <span className="openings-badge">{job.no_of_openings || '-'}</span>
+                                            </td>
+                                            <td className="job-date">{formatDate(job.created_at)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
             </div>
