@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import Anthropic from '@anthropic-ai/sdk';
-import jsforce from 'jsforce';
+import pg from 'pg';
 
 dotenv.config();
 
@@ -284,10 +284,14 @@ app.post('/api/claude/chat', async (req, res) => {
     }
 });
 
-// Salesforce connection instance
-let sfConnection = null;
+// PostgreSQL connection pool for Heroku Connect
+const { Pool } = pg;
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
 
-// Create Campaign record in Salesforce
+// Create Campaign record via PostgreSQL (Heroku Connect syncs to Salesforce)
 app.post('/api/salesforce/campaign', async (req, res) => {
     try {
         const { jobTitle, salary, noOfOpenings, skills, jobDescription } = req.body;
@@ -300,54 +304,35 @@ app.post('/api/salesforce/campaign', async (req, res) => {
             });
         }
 
-        // Create Salesforce connection if not exists
-        if (!sfConnection) {
-            sfConnection = new jsforce.Connection({
-                loginUrl: process.env.SF_LOGIN_URL || 'https://login.salesforce.com'
-            });
-
-            await sfConnection.login(
-                process.env.SF_USERNAME,
-                process.env.SF_PASSWORD + (process.env.SF_SECURITY_TOKEN || '')
-            );
-        }
-
         // Combine description with skills
         const fullDescription = skills
             ? `${jobDescription || ''}\n\nRequired Skills: ${skills}`
             : jobDescription || '';
 
-        // Create Campaign record with field mapping
-        const campaignData = {
-            Name: jobTitle,
-            R_ATS__No_of_openings__c: noOfOpenings ? parseInt(noOfOpenings) : null,
-            R_ATS__Salary__c: salary ? parseFloat(salary) : null,
-            Description: fullDescription
-        };
+        // Insert into PostgreSQL - Heroku Connect will sync to Salesforce
+        const query = `
+            INSERT INTO salesforce.campaign (name, r_ats__no_of_openings__c, r_ats__salary__c, description)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+        `;
 
-        const result = await sfConnection.sobject('Campaign').create(campaignData);
+        const values = [
+            jobTitle,
+            noOfOpenings ? parseInt(noOfOpenings) : null,
+            salary ? parseFloat(salary) : null,
+            fullDescription
+        ];
 
-        if (result.success) {
-            res.json({
-                success: true,
-                id: result.id,
-                message: 'Campaign created successfully'
-            });
-        } else {
-            res.status(400).json({
-                success: false,
-                message: 'Failed to create Campaign',
-                errors: result.errors
-            });
-        }
+        const result = await pool.query(query, values);
+
+        res.json({
+            success: true,
+            id: result.rows[0].id,
+            message: 'Campaign created successfully. It will sync to Salesforce shortly.'
+        });
 
     } catch (error) {
         console.error('Error creating Campaign:', error);
-
-        // Reset connection on auth errors
-        if (error.name === 'INVALID_SESSION_ID' || error.errorCode === 'INVALID_SESSION_ID') {
-            sfConnection = null;
-        }
 
         res.status(500).json({
             success: false,

@@ -13,7 +13,25 @@
       "Bash(findstr:*)",
       "Bash(taskkill:*)",
       "Bash(cmd.exe /c \"taskkill /PID 14072 /F\")",
-      "Bash(powershell.exe -Command:*)"
+      "Bash(powershell.exe -Command:*)",
+      "Bash(tasklist:*)",
+      "Bash(pkill:*)",
+      "Bash(kill:*)",
+      "Bash(cmd.exe /c \"taskkill /IM node.exe /F\")",
+      "Bash(/c/Windows/System32/cmd.exe /c \"taskkill /IM node.exe /F\")",
+      "Bash(/c/Windows/System32/taskkill.exe /IM node.exe /F)",
+      "Bash(ps:*)",
+      "Bash(/c/Windows/System32/taskkill.exe //F //IM node.exe)",
+      "Bash(echo:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs:*)",
+      "Bash(ss:*)",
+      "Bash(PORT=3001 npm start)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd Salesforce Campaign creation from job posting\n\n- Add jsforce package for Salesforce integration\n- Create /api/salesforce/campaign endpoint to create Campaign records\n- Map job fields to Salesforce Campaign: jobTitle->Name, noOfOpenings->R_ATS__No_of_openings__c, salary->R_ATS__Salary__c, description+skills->Description\n- Update handleSubmitJob to call Campaign API on submission\n- Extract only numbers from salary field in AI response\n- Update Vite proxy to port 3001\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npm run build:*)",
+      "Bash(heroku config:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUse PostgreSQL via Heroku Connect for Campaign creation\n\n- Replace jsforce with pg for database operations\n- Insert Campaign records into PostgreSQL salesforce.campaign table\n- Heroku Connect will sync records to Salesforce automatically\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
