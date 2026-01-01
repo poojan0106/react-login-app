@@ -18,52 +18,8 @@ function Dashboard() {
     });
     const { toasts, toast, removeToast } = useToast();
 
-    // Sample data for preview
-    const sampleJobs = [
-        {
-            id: 1,
-            job_title: 'Senior React Developer',
-            salary: 150000,
-            no_of_openings: 3,
-            description: 'We are looking for an experienced React developer to join our team. Must have 5+ years of experience with modern JavaScript frameworks.',
-            created_at: new Date().toISOString()
-        },
-        {
-            id: 2,
-            job_title: 'Salesforce Administrator',
-            salary: 95000,
-            no_of_openings: 2,
-            description: 'Seeking a certified Salesforce Administrator to manage our CRM platform and implement new features.',
-            created_at: new Date(Date.now() - 86400000).toISOString()
-        },
-        {
-            id: 3,
-            job_title: 'Full Stack Engineer',
-            salary: 130000,
-            no_of_openings: 5,
-            description: 'Join our engineering team to build scalable web applications using Node.js, React, and PostgreSQL.',
-            created_at: new Date(Date.now() - 172800000).toISOString()
-        },
-        {
-            id: 4,
-            job_title: 'DevOps Engineer',
-            salary: 140000,
-            no_of_openings: 1,
-            description: 'Looking for a DevOps expert to manage our AWS infrastructure and CI/CD pipelines.',
-            created_at: new Date(Date.now() - 259200000).toISOString()
-        },
-        {
-            id: 5,
-            job_title: 'UI/UX Designer',
-            salary: 110000,
-            no_of_openings: 2,
-            description: 'Creative designer needed to craft beautiful user interfaces and improve user experience across our products.',
-            created_at: new Date(Date.now() - 345600000).toISOString()
-        }
-    ];
-
     // Job listings state
-    const [jobListings, setJobListings] = useState(sampleJobs);
+    const [jobListings, setJobListings] = useState([]);
     const [isLoadingJobs, setIsLoadingJobs] = useState(false);
     const [filters, setFilters] = useState({
         search: '',
@@ -72,62 +28,6 @@ function Dashboard() {
         sortBy: 'created_at',
         sortOrder: 'DESC'
     });
-
-    // Apply filters to sample data locally
-    const filterAndSortJobs = useCallback((jobs) => {
-        let filtered = [...jobs];
-
-        // Search filter
-        if (filters.search) {
-            const searchLower = filters.search.toLowerCase();
-            filtered = filtered.filter(job =>
-                job.job_title.toLowerCase().includes(searchLower) ||
-                (job.description && job.description.toLowerCase().includes(searchLower))
-            );
-        }
-
-        // Salary min filter
-        if (filters.salaryMin) {
-            filtered = filtered.filter(job => job.salary >= parseFloat(filters.salaryMin));
-        }
-
-        // Salary max filter
-        if (filters.salaryMax) {
-            filtered = filtered.filter(job => job.salary <= parseFloat(filters.salaryMax));
-        }
-
-        // Sorting
-        filtered.sort((a, b) => {
-            let aVal, bVal;
-            switch (filters.sortBy) {
-                case 'name':
-                    aVal = a.job_title.toLowerCase();
-                    bVal = b.job_title.toLowerCase();
-                    break;
-                case 'r_ats__salary__c':
-                    aVal = a.salary || 0;
-                    bVal = b.salary || 0;
-                    break;
-                case 'r_ats__no_of_openings__c':
-                    aVal = a.no_of_openings || 0;
-                    bVal = b.no_of_openings || 0;
-                    break;
-                case 'created_at':
-                default:
-                    aVal = new Date(a.created_at).getTime();
-                    bVal = new Date(b.created_at).getTime();
-                    break;
-            }
-
-            if (filters.sortOrder === 'ASC') {
-                return aVal > bVal ? 1 : -1;
-            } else {
-                return aVal < bVal ? 1 : -1;
-            }
-        });
-
-        return filtered;
-    }, [filters]);
 
     // Fetch job listings
     const fetchJobListings = useCallback(async () => {
@@ -140,23 +40,25 @@ function Dashboard() {
             params.append('sortBy', filters.sortBy);
             params.append('sortOrder', filters.sortOrder);
 
+            // Filter by logged-in user's email
+            const userEmail = localStorage.getItem('userEmail');
+            if (userEmail) params.append('refererEmail', userEmail);
+
             const response = await fetch(`/api/salesforce/jobs?${params.toString()}`);
             const result = await response.json();
 
-            if (result.success && result.data.length > 0) {
+            if (result.success) {
                 setJobListings(result.data);
             } else {
-                // Use sample data with local filters if no data from API
-                setJobListings(filterAndSortJobs(sampleJobs));
+                setJobListings([]);
             }
         } catch (error) {
             console.error('Error fetching jobs:', error);
-            // Use sample data with local filters on error
-            setJobListings(filterAndSortJobs(sampleJobs));
+            setJobListings([]);
         } finally {
             setIsLoadingJobs(false);
         }
-    }, [filters, filterAndSortJobs]);
+    }, [filters]);
 
     // Fetch jobs on mount and when filters change
     useEffect(() => {
@@ -266,6 +168,7 @@ function Dashboard() {
         setIsLoading(true);
 
         try {
+            const userEmail = localStorage.getItem('userEmail');
             const response = await fetch('/api/salesforce/campaign', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -274,7 +177,8 @@ function Dashboard() {
                     salary: jobData.salary,
                     noOfOpenings: jobData.noOfOpenings,
                     skills: jobData.skills,
-                    jobDescription: jobData.jobDescription
+                    jobDescription: jobData.jobDescription,
+                    refererEmail: userEmail
                 })
             });
 

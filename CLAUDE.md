@@ -45,14 +45,14 @@ npm run preview
 # Lint code
 npm run lint
 
-# Backend server (runs on port 3001)
+# Backend server (runs on port 3003)
 cd server && npm start
 ```
 
 ## Architecture Notes
 
 - **Authentication Flow**: Login credentials are sent to `/api/salesforce/auth` which authenticates with Salesforce via jsforce. Auth state is stored in localStorage (`sfAuthenticated`).
-- **API Proxy**: Vite is configured to proxy `/api` requests to the backend server at `localhost:3001`.
+- **API Proxy**: Vite is configured to proxy `/api` requests to the backend server at `localhost:3003`.
 - **Salesforce Connection**: The backend maintains a single `sfConnection` instance (note: not production-ready, needs proper session management).
 
 ## API Endpoints
@@ -76,7 +76,7 @@ SF_USERNAME=your_salesforce_username
 SF_PASSWORD=your_salesforce_password
 SF_SECURITY_TOKEN=your_security_token
 SF_LOGIN_URL=https://login.salesforce.com
-PORT=3001
+PORT=3003
 
 # AWS SES
 AWS_REGION=us-east-1
@@ -88,6 +88,6 @@ AWS_SES_FROM_EMAIL=verified@yourdomain.com
 ## Development Notes
 
 - The frontend runs on port 5173 (Vite default)
-- The backend runs on port 3001
+- The backend runs on port 3003
 - Both servers must be running for full functionality
 - The dashboard has three tabs: Accounts, Contacts, and Opportunities

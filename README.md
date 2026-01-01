@@ -26,7 +26,7 @@ SF_LOGIN_URL=https://login.salesforce.com
 SF_USERNAME=your_salesforce_username@example.com
 SF_PASSWORD=your_salesforce_password
 SF_SECURITY_TOKEN=your_security_token
-PORT=3001
+PORT=3003
 ```
 
 **Note:** To get your Salesforce Security Token:
@@ -122,7 +122,7 @@ The backend server provides these endpoints:
 ## 🐛 Troubleshooting
 
 **"Network error: Unable to connect to server"**
-- Make sure the backend server is running on port 3001
+- Make sure the backend server is running on port 3003
 - Check that `server/.env` is configured correctly
 
 **"Authentication failed"**

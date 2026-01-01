@@ -8,158 +8,36 @@ function JobDetails() {
     const [job, setJob] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Sample job data (matching the dashboard sample data)
-    const sampleJobs = [
-        {
-            id: 1,
-            job_title: 'Senior React Developer',
-            salary: 150000,
-            no_of_openings: 3,
-            description: 'We are looking for an experienced React developer to join our team. Must have 5+ years of experience with modern JavaScript frameworks.',
-            skills: 'React, JavaScript, TypeScript, Redux, Node.js, REST APIs, GraphQL',
-            location: 'San Francisco, CA',
-            job_type: 'Full-time',
-            experience_level: 'Senior',
-            department: 'Engineering',
-            created_at: new Date().toISOString(),
-            benefits: ['Health Insurance', '401k Match', 'Remote Work', 'Stock Options', 'Unlimited PTO'],
-            responsibilities: [
-                'Design and implement new features using React and TypeScript',
-                'Collaborate with cross-functional teams to define and ship new features',
-                'Write clean, maintainable, and well-tested code',
-                'Mentor junior developers and conduct code reviews',
-                'Participate in architectural decisions and technical planning'
-            ],
-            requirements: [
-                '5+ years of experience with React.js',
-                'Strong proficiency in JavaScript/TypeScript',
-                'Experience with state management (Redux, Context API)',
-                'Familiarity with RESTful APIs and GraphQL',
-                'Bachelor\'s degree in Computer Science or equivalent experience'
-            ]
-        },
-        {
-            id: 2,
-            job_title: 'Salesforce Administrator',
-            salary: 95000,
-            no_of_openings: 2,
-            description: 'Seeking a certified Salesforce Administrator to manage our CRM platform and implement new features.',
-            skills: 'Salesforce, Apex, SOQL, Lightning, Process Builder, Flow',
-            location: 'New York, NY',
-            job_type: 'Full-time',
-            experience_level: 'Mid-level',
-            department: 'Operations',
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            benefits: ['Health Insurance', '401k Match', 'Hybrid Work', 'Professional Development'],
-            responsibilities: [
-                'Manage and maintain Salesforce CRM environment',
-                'Create and customize reports and dashboards',
-                'Implement automation using Flow and Process Builder',
-                'Provide user training and support',
-                'Ensure data integrity and security compliance'
-            ],
-            requirements: [
-                'Salesforce Administrator certification required',
-                '3+ years of Salesforce administration experience',
-                'Experience with Apex and SOQL preferred',
-                'Strong analytical and problem-solving skills',
-                'Excellent communication skills'
-            ]
-        },
-        {
-            id: 3,
-            job_title: 'Full Stack Engineer',
-            salary: 130000,
-            no_of_openings: 5,
-            description: 'Join our engineering team to build scalable web applications using Node.js, React, and PostgreSQL.',
-            skills: 'Node.js, React, PostgreSQL, Docker, AWS, Git, Agile',
-            location: 'Austin, TX',
-            job_type: 'Full-time',
-            experience_level: 'Mid-level',
-            department: 'Engineering',
-            created_at: new Date(Date.now() - 172800000).toISOString(),
-            benefits: ['Health Insurance', '401k Match', 'Remote Work', 'Learning Budget', 'Gym Membership'],
-            responsibilities: [
-                'Develop and maintain full-stack web applications',
-                'Design and implement database schemas',
-                'Build RESTful APIs and microservices',
-                'Deploy and manage applications on AWS',
-                'Collaborate with product and design teams'
-            ],
-            requirements: [
-                '3+ years of full-stack development experience',
-                'Proficiency in Node.js and React',
-                'Experience with SQL databases (PostgreSQL preferred)',
-                'Familiarity with cloud services (AWS/GCP)',
-                'Experience with Docker and containerization'
-            ]
-        },
-        {
-            id: 4,
-            job_title: 'DevOps Engineer',
-            salary: 140000,
-            no_of_openings: 1,
-            description: 'Looking for a DevOps expert to manage our AWS infrastructure and CI/CD pipelines.',
-            skills: 'AWS, Kubernetes, Docker, Terraform, Jenkins, Python, Linux',
-            location: 'Seattle, WA',
-            job_type: 'Full-time',
-            experience_level: 'Senior',
-            department: 'Infrastructure',
-            created_at: new Date(Date.now() - 259200000).toISOString(),
-            benefits: ['Health Insurance', '401k Match', 'Remote Work', 'Stock Options', 'Conference Budget'],
-            responsibilities: [
-                'Design and maintain cloud infrastructure on AWS',
-                'Implement and manage CI/CD pipelines',
-                'Automate deployment and scaling processes',
-                'Monitor system performance and reliability',
-                'Implement security best practices'
-            ],
-            requirements: [
-                '5+ years of DevOps/SRE experience',
-                'Strong experience with AWS services',
-                'Expertise in Kubernetes and Docker',
-                'Experience with Infrastructure as Code (Terraform)',
-                'Strong scripting skills (Python, Bash)'
-            ]
-        },
-        {
-            id: 5,
-            job_title: 'UI/UX Designer',
-            salary: 110000,
-            no_of_openings: 2,
-            description: 'Creative designer needed to craft beautiful user interfaces and improve user experience across our products.',
-            skills: 'Figma, Sketch, Adobe XD, Prototyping, User Research, Design Systems',
-            location: 'Los Angeles, CA',
-            job_type: 'Full-time',
-            experience_level: 'Mid-level',
-            department: 'Design',
-            created_at: new Date(Date.now() - 345600000).toISOString(),
-            benefits: ['Health Insurance', '401k Match', 'Hybrid Work', 'Creative Tools Budget', 'Wellness Program'],
-            responsibilities: [
-                'Create wireframes, prototypes, and high-fidelity designs',
-                'Conduct user research and usability testing',
-                'Develop and maintain design systems',
-                'Collaborate with developers to implement designs',
-                'Present design solutions to stakeholders'
-            ],
-            requirements: [
-                '4+ years of UI/UX design experience',
-                'Proficiency in Figma and design tools',
-                'Strong portfolio demonstrating design process',
-                'Experience with design systems',
-                'Excellent visual design skills'
-            ]
-        }
-    ];
-
     useEffect(() => {
-        setIsLoading(true);
-        // Simulate API call - in production, fetch from /api/salesforce/jobs/:id
-        setTimeout(() => {
-            const foundJob = sampleJobs.find(j => j.id === parseInt(id));
-            setJob(foundJob || null);
-            setIsLoading(false);
-        }, 500);
+        const fetchJob = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch(`/api/salesforce/jobs/${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    // Parse skills from description if present
+                    const jobData = result.data;
+                    if (jobData.description) {
+                        const skillsMatch = jobData.description.match(/Required Skills:\s*(.+)/i);
+                        if (skillsMatch) {
+                            jobData.skills = skillsMatch[1].trim();
+                            jobData.description = jobData.description.replace(/\n\nRequired Skills:.+/i, '').trim();
+                        }
+                    }
+                    setJob(jobData);
+                } else {
+                    setJob(null);
+                }
+            } catch (error) {
+                console.error('Error fetching job:', error);
+                setJob(null);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchJob();
     }, [id]);
 
     const formatSalary = (salary) => {
@@ -273,24 +151,27 @@ function JobDetails() {
                         <div className="job-title-section">
                             <h1>{job.job_title}</h1>
                             <div className="job-meta">
+                                {job.no_of_openings && (
+                                    <span className="meta-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        {job.no_of_openings} openings
+                                    </span>
+                                )}
+                                {job.salary && (
+                                    <span className="meta-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        {formatSalary(job.salary)}
+                                    </span>
+                                )}
                                 <span className="meta-item">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    {job.location}
-                                </span>
-                                <span className="meta-item">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                    </svg>
-                                    {job.department}
-                                </span>
-                                <span className="meta-item">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    {job.job_type}
+                                    {formatDate(job.created_at)}
                                 </span>
                             </div>
                         </div>
@@ -328,18 +209,7 @@ function JobDetails() {
                             </div>
                             <div className="quick-info-text">
                                 <span className="quick-info-label">Openings</span>
-                                <span className="quick-info-value">{job.no_of_openings} positions</span>
-                            </div>
-                        </div>
-                        <div className="quick-info-card">
-                            <div className="quick-info-icon level-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            </div>
-                            <div className="quick-info-text">
-                                <span className="quick-info-label">Experience</span>
-                                <span className="quick-info-value">{job.experience_level}</span>
+                                <span className="quick-info-value">{job.no_of_openings || '-'} positions</span>
                             </div>
                         </div>
                         <div className="quick-info-card">
@@ -368,89 +238,31 @@ function JobDetails() {
                                 </svg>
                                 Job Description
                             </h2>
-                            <p className="description-text">{job.description}</p>
-                        </div>
-
-                        {/* Responsibilities */}
-                        <div className="content-card fade-in-up" style={{ animationDelay: '0.2s' }}>
-                            <h2>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                </svg>
-                                Responsibilities
-                            </h2>
-                            <ul className="list-items">
-                                {job.responsibilities?.map((item, index) => (
-                                    <li key={index}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        {/* Requirements */}
-                        <div className="content-card fade-in-up" style={{ animationDelay: '0.3s' }}>
-                            <h2>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                                </svg>
-                                Requirements
-                            </h2>
-                            <ul className="list-items">
-                                {job.requirements?.map((item, index) => (
-                                    <li key={index}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
+                            <p className="description-text">{job.description || 'No description available.'}</p>
                         </div>
                     </div>
 
                     {/* Sidebar */}
                     <div className="job-sidebar">
                         {/* Skills */}
-                        <div className="sidebar-card fade-in-up" style={{ animationDelay: '0.15s' }}>
-                            <h3>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                </svg>
-                                Required Skills
-                            </h3>
-                            <div className="skills-tags">
-                                {job.skills?.split(',').map((skill, index) => (
-                                    <span key={index} className="skill-tag">{skill.trim()}</span>
-                                ))}
+                        {job.skills && (
+                            <div className="sidebar-card fade-in-up" style={{ animationDelay: '0.15s' }}>
+                                <h3>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    Required Skills
+                                </h3>
+                                <div className="skills-tags">
+                                    {job.skills.split(',').map((skill, index) => (
+                                        <span key={index} className="skill-tag">{skill.trim()}</span>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-
-                        {/* Benefits */}
-                        <div className="sidebar-card fade-in-up" style={{ animationDelay: '0.25s' }}>
-                            <h3>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                                </svg>
-                                Benefits
-                            </h3>
-                            <ul className="benefits-list">
-                                {job.benefits?.map((benefit, index) => (
-                                    <li key={index}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        {benefit}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        )}
 
                         {/* Share */}
-                        <div className="sidebar-card fade-in-up" style={{ animationDelay: '0.35s' }}>
+                        <div className="sidebar-card fade-in-up" style={{ animationDelay: '0.25s' }}>
                             <h3>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />

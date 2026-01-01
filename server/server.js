@@ -294,7 +294,7 @@ const pool = new Pool({
 // Create Campaign record via PostgreSQL (Heroku Connect syncs to Salesforce)
 app.post('/api/salesforce/campaign', async (req, res) => {
     try {
-        const { jobTitle, salary, noOfOpenings, skills, jobDescription } = req.body;
+        const { jobTitle, salary, noOfOpenings, skills, jobDescription, refererEmail } = req.body;
 
         // Validate required fields
         if (!jobTitle) {
@@ -311,8 +311,8 @@ app.post('/api/salesforce/campaign', async (req, res) => {
 
         // Insert into PostgreSQL - Heroku Connect will sync to Salesforce
         const query = `
-            INSERT INTO salesforce.campaign (name, r_ats__no_of_openings__c, r_ats__salary__c, description)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO salesforce.campaign (name, r_ats__no_of_openings__c, r_ats__salary__c, description, r_ats__referer_email__c)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING id
         `;
 
@@ -320,7 +320,8 @@ app.post('/api/salesforce/campaign', async (req, res) => {
             jobTitle,
             noOfOpenings ? parseInt(noOfOpenings) : null,
             salary ? parseFloat(salary) : null,
-            fullDescription
+            fullDescription,
+            refererEmail || null
         ];
 
         const result = await pool.query(query, values);
@@ -345,7 +346,7 @@ app.post('/api/salesforce/campaign', async (req, res) => {
 // Get job listings (campaigns) from PostgreSQL
 app.get('/api/salesforce/jobs', async (req, res) => {
     try {
-        const { search, salaryMin, salaryMax, sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
+        const { search, salaryMin, salaryMax, sortBy = 'created_at', sortOrder = 'DESC', refererEmail } = req.query;
 
         let query = `
             SELECT
@@ -360,6 +361,13 @@ app.get('/api/salesforce/jobs', async (req, res) => {
         `;
         const values = [];
         let paramIndex = 1;
+
+        // Filter by referer email (only show campaigns created by logged-in user)
+        if (refererEmail) {
+            query += ` AND LOWER(r_ats__referer_email__c) = LOWER($${paramIndex})`;
+            values.push(refererEmail);
+            paramIndex++;
+        }
 
         // Search filter (job title or description)
         if (search) {
@@ -401,6 +409,47 @@ app.get('/api/salesforce/jobs', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to fetch job listings',
+            error: error.message
+        });
+    }
+});
+
+// Get single job by ID
+app.get('/api/salesforce/jobs/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const query = `
+            SELECT
+                id,
+                name as job_title,
+                r_ats__no_of_openings__c as no_of_openings,
+                r_ats__salary__c as salary,
+                description,
+                createddate as created_at
+            FROM salesforce.campaign
+            WHERE id = $1
+        `;
+
+        const result = await pool.query(query, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Job not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error fetching job:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch job details',
             error: error.message
         });
     }

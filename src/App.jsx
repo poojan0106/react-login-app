@@ -18,6 +18,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('authenticated');
+    localStorage.removeItem('userEmail');
     setIsAuthenticated(false);
   };
 

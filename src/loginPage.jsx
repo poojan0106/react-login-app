@@ -97,6 +97,7 @@ function LoginPage({ onLogin }) {
 
       if (data.success) {
         toast.success('Verification successful! Redirecting...');
+        localStorage.setItem('userEmail', email);
         setTimeout(() => {
           onLogin();
         }, 1000);
