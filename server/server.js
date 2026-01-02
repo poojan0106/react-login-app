@@ -455,6 +455,103 @@ app.get('/api/salesforce/jobs/:id', async (req, res) => {
     }
 });
 
+
+// Update job by ID
+app.put('/api/salesforce/jobs/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { jobTitle, salary, noOfOpenings, skills, jobDescription } = req.body;
+
+        if (!jobTitle) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job title is required'
+            });
+        }
+
+        const fullDescription = skills
+            ? `${jobDescription || ''}
+
+Required Skills: ${skills}`
+            : jobDescription || '';
+
+        const query = `
+            UPDATE salesforce.campaign
+            SET name = $1,
+                r_ats__no_of_openings__c = $2,
+                r_ats__salary__c = $3,
+                description = $4
+            WHERE id = $5
+            RETURNING id
+        `;
+
+        const values = [
+            jobTitle,
+            noOfOpenings ? parseInt(noOfOpenings) : null,
+            salary ? parseFloat(salary) : null,
+            fullDescription,
+            id
+        ];
+
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Job not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Job updated successfully. Changes will sync to Salesforce shortly.'
+        });
+
+    } catch (error) {
+        console.error('Error updating job:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update job',
+            error: error.message
+        });
+    }
+});
+
+// Delete job by ID
+app.delete('/api/salesforce/jobs/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const query = `
+            DELETE FROM salesforce.campaign
+            WHERE id = $1
+            RETURNING id
+        `;
+
+        const result = await pool.query(query, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Job not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Job deleted successfully. Changes will sync to Salesforce shortly.'
+        });
+
+    } catch (error) {
+        console.error('Error deleting job:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete job',
+            error: error.message
+        });
+    }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });

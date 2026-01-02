@@ -21,6 +21,21 @@ function Dashboard() {
     // Job listings state
     const [jobListings, setJobListings] = useState([]);
     const [isLoadingJobs, setIsLoadingJobs] = useState(false);
+    
+    // Edit/Delete modal state
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [selectedJob, setSelectedJob] = useState(null);
+    const [editFormData, setEditFormData] = useState({
+        jobTitle: '',
+        salary: '',
+        noOfOpenings: '',
+        skills: '',
+        jobDescription: ''
+    });
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const [filters, setFilters] = useState({
         search: '',
         salaryMin: '',
@@ -218,6 +233,103 @@ function Dashboard() {
         setJobPrompt('');
     };
 
+    
+    // Handle edit button click
+    const handleEditClick = (e, job) => {
+        e.stopPropagation();
+        setSelectedJob(job);
+        let description = job.description || '';
+        let skills = '';
+        const skillsMatch = description.match(/Required Skills:\s*(.+)/i);
+        if (skillsMatch) {
+            skills = skillsMatch[1].trim();
+            description = description.replace(/\n\nRequired Skills:.+/i, '').trim();
+        }
+        setEditFormData({
+            jobTitle: job.job_title || '',
+            salary: job.salary ? String(job.salary) : '',
+            noOfOpenings: job.no_of_openings ? String(job.no_of_openings) : '',
+            skills: skills,
+            jobDescription: description
+        });
+        setEditModalOpen(true);
+    };
+
+    // Handle delete button click
+    const handleDeleteClick = (e, job) => {
+        e.stopPropagation();
+        setSelectedJob(job);
+        setDeleteConfirmOpen(true);
+    };
+
+    // Handle edit form submission
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedJob) return;
+
+        setIsUpdating(true);
+        try {
+            const response = await fetch(`/api/salesforce/jobs/${selectedJob.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editFormData)
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success('Job updated successfully!');
+                setEditModalOpen(false);
+                setSelectedJob(null);
+                fetchJobListings();
+            } else {
+                toast.error(result.message || 'Failed to update job');
+            }
+        } catch (error) {
+            console.error('Error updating job:', error);
+            toast.error('Network error. Please try again.');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    // Handle delete confirmation
+    const handleDeleteConfirm = async () => {
+        if (!selectedJob) return;
+
+        setIsDeleting(true);
+        try {
+            const response = await fetch(`/api/salesforce/jobs/${selectedJob.id}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success('Job deleted successfully!');
+                setDeleteConfirmOpen(false);
+                setSelectedJob(null);
+                fetchJobListings();
+            } else {
+                toast.error(result.message || 'Failed to delete job');
+            }
+        } catch (error) {
+            console.error('Error deleting job:', error);
+            toast.error('Network error. Please try again.');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleCloseEditModal = () => {
+        setEditModalOpen(false);
+        setSelectedJob(null);
+    };
+
+    const handleCloseDeleteConfirm = () => {
+        setDeleteConfirmOpen(false);
+        setSelectedJob(null);
+    };
+
+
     return (
         <div className="dashboard-wrapper">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -378,6 +490,7 @@ function Dashboard() {
                                         <th onClick={() => handleSort('created_at')} className="sortable">
                                             Created {getSortIcon('created_at')}
                                         </th>
+                                        <th className="actions-header">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -401,6 +514,18 @@ function Dashboard() {
                                                 <span className="openings-badge">{job.no_of_openings || '-'}</span>
                                             </td>
                                             <td className="job-date">{formatDate(job.created_at)}</td>
+                                            <td className="job-actions" onClick={(e) => e.stopPropagation()}>
+                                                <button className="action-btn edit-btn" onClick={(e) => handleEditClick(e, job)} title="Edit">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </button>
+                                                <button className="action-btn delete-btn" onClick={(e) => handleDeleteClick(e, job)} title="Delete">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -596,6 +721,130 @@ function Dashboard() {
                     </div>
                 </div>
             )}
+
+            {/* Edit Job Modal */}
+            {editModalOpen && selectedJob && (
+                <div className="modal-overlay" onClick={handleCloseEditModal}>
+                    <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-glow"></div>
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <div className="modal-header-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </div>
+                                <div className="modal-header-text">
+                                    <h2>Edit Job</h2>
+                                    <p>Update the job posting details</p>
+                                </div>
+                                <button className="modal-close" onClick={handleCloseEditModal}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleEditSubmit} className="modal-form">
+                                <div className="review-grid">
+                                    <div className="review-field">
+                                        <label htmlFor="editJobTitle">Job Title</label>
+                                        <input
+                                            type="text"
+                                            id="editJobTitle"
+                                            value={editFormData.jobTitle}
+                                            onChange={(e) => setEditFormData({...editFormData, jobTitle: e.target.value})}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="review-field">
+                                        <label htmlFor="editSalary">Salary ($)</label>
+                                        <input
+                                            type="text"
+                                            id="editSalary"
+                                            value={editFormData.salary}
+                                            onChange={(e) => setEditFormData({...editFormData, salary: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="review-field">
+                                        <label htmlFor="editOpenings">No. of Openings</label>
+                                        <input
+                                            type="number"
+                                            id="editOpenings"
+                                            value={editFormData.noOfOpenings}
+                                            onChange={(e) => setEditFormData({...editFormData, noOfOpenings: e.target.value})}
+                                            min="1"
+                                        />
+                                    </div>
+                                    <div className="review-field full-width">
+                                        <label htmlFor="editSkills">Skills</label>
+                                        <input
+                                            type="text"
+                                            id="editSkills"
+                                            value={editFormData.skills}
+                                            onChange={(e) => setEditFormData({...editFormData, skills: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="review-field full-width">
+                                        <label htmlFor="editDescription">Job Description</label>
+                                        <textarea
+                                            id="editDescription"
+                                            value={editFormData.jobDescription}
+                                            onChange={(e) => setEditFormData({...editFormData, jobDescription: e.target.value})}
+                                            rows={4}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="review-actions">
+                                    <button type="button" className="back-btn" onClick={handleCloseEditModal}>
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="submit-btn" disabled={isUpdating}>
+                                        <span className="btn-content">
+                                            {isUpdating ? 'Updating...' : 'Update Job'}
+                                        </span>
+                                        <div className="btn-glow"></div>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirmOpen && selectedJob && (
+                <div className="modal-overlay" onClick={handleCloseDeleteConfirm}>
+                    <div className="modal-container delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-glow delete-glow"></div>
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <div className="modal-header-icon delete-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div className="modal-header-text">
+                                    <h2>Delete Job</h2>
+                                    <p>Are you sure you want to delete this job posting?</p>
+                                </div>
+                            </div>
+                            <div className="delete-job-info">
+                                <strong>{selectedJob.job_title}</strong>
+                                <span>This action cannot be undone.</span>
+                            </div>
+                            <div className="review-actions">
+                                <button type="button" className="back-btn" onClick={handleCloseDeleteConfirm}>
+                                    Cancel
+                                </button>
+                                <button type="button" className="delete-confirm-btn" onClick={handleDeleteConfirm} disabled={isDeleting}>
+                                    {isDeleting ? 'Deleting...' : 'Delete Job'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
