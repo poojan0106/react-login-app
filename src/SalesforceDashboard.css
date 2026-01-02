@@ -1569,8 +1569,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 50%;
+    height: 50%;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
@@ -1614,73 +1614,133 @@
     transform: translateY(-2px);
 }
 
-/* Delete Confirmation Modal */
+/* Delete Confirmation Modal - Clean Design */
 .delete-confirm-modal {
-    max-width: 420px;
+    max-width: 380px;
 }
 
 .delete-confirm-modal .modal-glow.delete-glow {
-    background: radial-gradient(ellipse at center, rgba(245, 87, 108, 0.2) 0%, transparent 70%);
+    display: none;
+}
+
+.delete-confirm-modal .modal-content {
+    padding: 0;
+    text-align: center;
+}
+
+.delete-confirm-modal .modal-header {
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 32px 20px;
+    border-bottom: none;
 }
 
 .delete-confirm-modal .modal-header-icon.delete-icon {
-    background: linear-gradient(135deg, rgba(245, 87, 108, 0.2) 0%, rgba(255, 107, 107, 0.2) 100%);
-    border-color: rgba(245, 87, 108, 0.3);
+    width: 56px;
+    height: 56px;
+    background: rgba(239, 68, 68, 0.1);
+    border: none;
+    border-radius: 50%;
+    margin-bottom: 16px;
 }
 
 .delete-confirm-modal .modal-header-icon.delete-icon svg {
-    color: #f5576c;
+    width: 28px;
+    height: 28px;
+    color: #ef4444;
+}
+
+.delete-confirm-modal .modal-header-text {
+    text-align: center;
+}
+
+.delete-confirm-modal .modal-header-text h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.delete-confirm-modal .modal-header-text p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.5;
 }
 
 .delete-job-info {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 20px 28px;
-    background: rgba(245, 87, 108, 0.08);
-    border: 1px solid rgba(245, 87, 108, 0.2);
-    border-radius: 12px;
-    margin: 0 28px 24px;
+    gap: 4px;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin: 0;
 }
 
 .delete-job-info strong {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 500;
     color: #ffffff;
 }
 
 .delete-job-info span {
-    font-size: 13px;
-    color: rgba(245, 87, 108, 0.9);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.delete-confirm-modal .review-actions {
+    display: flex;
+    gap: 12px;
+    padding: 20px 24px 24px;
+    margin: 0;
+}
+
+.delete-confirm-modal .back-btn {
+    flex: 1;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-confirm-modal .back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .delete-confirm-btn {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 14px 28px;
-    background: linear-gradient(135deg, #f5576c 0%, #ff6b6b 100%);
+    gap: 6px;
+    padding: 12px 20px;
+    background: #ef4444;
     border: none;
-    border-radius: 14px;
+    border-radius: 10px;
     color: #ffffff;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .delete-confirm-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
 }
 
 .delete-confirm-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
+    background: #dc2626;
 }
 
 .delete-confirm-btn:disabled {
-    opacity: 0.7;
+    opacity: 0.6;
     cursor: not-allowed;
 }

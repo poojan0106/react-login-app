@@ -42,7 +42,8 @@
       "Bash(/c/Windows/System32/cmd.exe /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -ano ^| findstr :5173''\\) do taskkill /PID %a /F\")",
       "Bash(rm:*)",
       "Bash(git commit:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(/c/Windows/System32/cmd.exe /c \"netstat -ano | findstr :3003\")"
     ]
   }
 }
